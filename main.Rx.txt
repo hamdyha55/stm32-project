@@ -1,0 +1,67 @@
+#define RCC_BASE 0x40023800
+#define GPIOB_BASE 0x40020400
+#define GPIOA_BASE 0x40020000
+#define USART2_BASE 0x40004400
+
+volatile unsigned int * const RCC_AHB1ENR = (unsigned int *)(RCC_BASE + 0x30);
+volatile unsigned int * const RCC_APB1ENR = (unsigned int *)(RCC_BASE + 0x40);
+volatile unsigned int * const GPIOB_MODER = (unsigned int *)(GPIOB_BASE + 0x00);
+volatile unsigned int * const GPIOB_BSRR = (unsigned int *)(GPIOB_BASE + 0x18);
+volatile unsigned int * const GPIOA_MODER = (unsigned int *)(GPIOA_BASE + 0x00);
+volatile unsigned int * const GPIOA_AFR = (unsigned int *)(GPIOA_BASE + 0x20);
+volatile unsigned int * const USART2_BRR = (unsigned int *)(USART2_BASE + 0x08);
+volatile unsigned int * const USART2_CR1 = (unsigned int *)(USART2_BASE + 0x0C);
+volatile unsigned int * const USART2_SR = (unsigned int *)(USART2_BASE + 0x00);
+volatile unsigned int * const USART2_DR = (unsigned int *)(USART2_BASE + 0x04);
+
+void delay_ms(int delay);
+void USART2_INIT(void);
+char USART2_READ(void);
+
+int main(void)
+{
+    char R_D;
+  
+    *RCC_AHB1ENR |= (1 << 1);                    //   ENABLE PORT B CLOCK
+    *GPIOB_MODER |= (1 << 4);                      //   CONFIGURE PB2 AS OUTPUT
+
+    USART2_INIT();
+
+    while (1)
+    {
+        R_D = USART2_READ();
+
+        if (R_D == 'O')
+            *GPIOB_BSRR = (1 << 2);       // WHEN RECEIVING 'O' LED ON PB2 ITS STATE IS ON
+        if (R_D == 'F')
+            *GPIOB_BSRR = (1 << 18);             // WHEN RECEIVING 'F' LED ON PB2 ITS STATE IS OFF
+    }
+}
+
+void USART2_INIT(void)
+{
+    *RCC_APB1ENR |= (1 << 17);              // ENABLE USART2 CLOCK
+    *RCC_AHB1ENR |= (1 << 0);                 // ENABLE PORT A CLOCK
+    *GPIOA_AFR[0] |= (7 << 12);            // ENABLE ALTERNATE FUNCTION TO USE USART2 (ON PA3)
+    *GPIOA_MODER |= (1 << 7);             // CONFIGURE PA3 IN ALTERNATE FUNCTION MODE (Rx)
+
+    *USART2_BRR = 0X0683;                // SET THE BAUD RATE 9600 AT 16MHz
+    *USART2_CR1 |= (1 << 13);              // ENABLE USART
+    *USART2_CR1 |= (1 << 2);              // ENABLE RECEIVER
+
+char USART2_READ(void)
+{
+    while (!(*USART2_SR & (1 << 5)))
+    {
+    }                                                       // WAIT UNTIL THE RECEIVING DATA REGISTER IS EMPTY
+    return *USART2_DR;                             // RETURN THE CHARACTER IN THE DATA REGISTER
+}
+
+void delay_ms(int delay)
+{
+    int i;
+    for (; delay > 0; delay--)
+        for (i = 0; i <= 2000; i++)
+        {
+        }
+}

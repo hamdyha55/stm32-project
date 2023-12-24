@@ -1,0 +1,58 @@
+#define RCC_BASE 0x40023800
+#define GPIOA_BASE 0x40020000
+#define USART2_BASE 0x40004400
+
+volatile unsigned int * const RCC_APB1ENR = (unsigned int *)(RCC_BASE + 0x40);
+volatile unsigned int * const RCC_AHB1ENR = (unsigned int *)(RCC_BASE + 0x30);
+volatile unsigned int * const GPIOA_MODER = (unsigned int *)(GPIOA_BASE + 0x00);
+volatile unsigned int * const GPIOA_AFR = (unsigned int *)(GPIOA_BASE + 0x20);
+volatile unsigned int * const USART2_BRR = (unsigned int *)(USART2_BASE + 0x08);
+volatile unsigned int * const USART2_CR1 = (unsigned int *)(USART2_BASE + 0x0C);
+volatile unsigned int * const USART2_SR = (unsigned int *)(USART2_BASE + 0x00);
+volatile unsigned int * const USART2_DR = (unsigned int *)(USART2_BASE + 0x04);
+
+void delay_ms(int delay);
+void USART2_INIT(void);
+void USART2_WRITE(int CH);
+
+int main(void)
+{
+    USART2_INIT();
+    while (1)
+    {
+        USART2_WRITE('O');
+        USART2_WRITE(' ');
+        delay_ms(250);
+        USART2_WRITE('F');
+        USART2_WRITE(' ');
+        delay_ms(250);
+    }
+}
+
+void USART2_INIT(void)
+{
+    *RCC_APB1ENR |= (1 << 17);                                      //  ENABLE USART2 CLOCK 
+    *RCC_AHB1ENR |= (1 << 0);                                       //  ENABLE PORT A CLOCK
+    *GPIOA_AFR[0] |= (7 << 8);                                      //  ENABLE ALTERNATE FUNCTION TO USE USART2
+    *GPIOA_MODER |= (1 << 5);                                    //  CONFIGURE PA2 IN ALTERNATE FUNCTION MODE
+
+    *USART2_BRR = 0X0683;                                         //  SET THE BAUD RATE 9600 AT 16MHz
+    *USART2_CR1 |= (1 << 13);                                     //  ENABLE THE USART
+    *USART2_CR1 |= (1 << 3);                                       //  ENABLE THE TRANSMITER 
+
+void USART2_WRITE(int CH)
+{
+    while (!(*USART2_SR & (1 << 7)))
+    {
+    }                                                                            //  WAIT UNTIL THE TRANSMIT DATA REGISTER IS EMPTY
+    *USART2_DR = CH & 0xFF;                                     //  WRITE THE CHARACTER TO THE DATA REGISTER
+}
+
+void delay_ms(int delay)
+{
+    int i;
+    for (; delay > 0; delay--)
+        for (i = 0; i <= 2000; i++)
+        {
+        }
+}
